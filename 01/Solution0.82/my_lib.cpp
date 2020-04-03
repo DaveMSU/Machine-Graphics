@@ -14,14 +14,14 @@ Vec3f reflect( const Vec3f& vec, const Vec3f& normal ){ // Отражаем ве
 // Сделать константным!!!!!!!!!!!!!!!!!
 std::pair<size_t, float> scene_intersect( const Vec3f& orig,
 	           	                  const Vec3f& dir,
-                                          const std::vector <Object>& objects ){ 
+                                          const std::vector <Object*>& objects ){ 
 
 	float  dist = -1;        // Расстояние до текущего объекта.
 	float  min_dist = -1;    // Расстояние до ближайшего объекта.
 	size_t min_index  = -1;  // Индекс ближайшего объекта.
 	for( size_t i = 0; i < objects.size(); ++i ){
 
-		dist = objects[i].ray_intersect( orig, dir );
+		dist = objects[i]->ray_intersect( orig, dir );
 		if( min_index == -1 && dist != -1 ){		
 			min_dist = dist;
 			min_index = i;
@@ -38,7 +38,7 @@ std::pair<size_t, float> scene_intersect( const Vec3f& orig,
 
 Vec3f cast_ray( const Vec3f& orig, 
 		const Vec3f& dir, 
-		const std::vector <Object>& objects, // spheres/chessdesk 
+		const std::vector <Object*>& objects, // spheres/chessdesk 
 		const std::vector <Light>& lights,
 	     	size_t depth ){
 
@@ -49,7 +49,7 @@ Vec3f cast_ray( const Vec3f& orig,
 	if( min_index != -1 ){
 
 		// Сделать все переменные static.
-		float fin_intensity = objects[min_index].material.backg_coef; // Цвет точки на объекте.
+		float fin_intensity = objects[min_index]->material.backg_coef; // Цвет точки на объекте.
 		Vec3f point;       // Радиус вектор этой точки.
 		Vec3f normal;	   // Нормаль к этой точке.
 		Vec3f light_dir;   // Вектор исходящий из источника в эту точку.
@@ -61,10 +61,11 @@ Vec3f cast_ray( const Vec3f& orig,
 		float shadow_coef = 0;      // Степень 'тени', если луч источника не достигает точки.
 		float light_to_indx_point;  // Расстояние от источника света до рассматриваемой точки.
 
+		// Добавить проверку на сферу.!!!!!
 		point = orig + dir.normalize()*min_dist; // Нормализуем, т.к. по дефолту не норм-но в рекурсии.
-		normal = (point - objects[min_index].center).normalize();
+		normal = (point - ((Sphere*)objects[min_index])->center).normalize();
 
-		Material this_material = objects[min_index].material;
+		Material this_material = objects[min_index]->material;
 		for( int i = 0; i < lights.size(); ++i ){
 
 			// Диффузный цвет:
@@ -85,22 +86,22 @@ Vec3f cast_ray( const Vec3f& orig,
 
 				if( indx == min_index ) continue;
 				light_to_indx_point = objects[indx]
-					.ray_intersect( lights[i].position, -light_dir.normalize() );
+					->ray_intersect( lights[i].position, -light_dir.normalize() );
 
 				if( (light_to_indx_point > 0) && (light_to_indx_point < light_dir.length()) )
 					shadow_coef += 0.08;
 			}
 
-			fin_intensity += diff_coef*objects[min_index].material.diff_coef;
-			fin_intensity += spec_coef*objects[min_index].material.spec_coef;
+			fin_intensity += diff_coef*objects[min_index]->material.diff_coef;
+			fin_intensity += spec_coef*objects[min_index]->material.spec_coef;
 			fin_intensity *= std::max(float(0.0), 1 - shadow_coef);
 		}
 
 		this_material.color *= fin_intensity;
 
 		// Зеркало:
-		float n2 = objects[min_index].material.refr_coef;
-		if( objects[min_index].material.mirror == true ){ // Добавить проверку на сферу!!!!!!
+		float n2 = objects[min_index]->material.refr_coef;
+		if( objects[min_index]->material.mirror == true ){ // Добавить проверку на сферу!!!!!!
                     
 			if( n2 > 0 ){
 
@@ -115,7 +116,8 @@ Vec3f cast_ray( const Vec3f& orig,
                                 Vec3f tmp_normal = ((-normal)*R - tmp_vec/2).normalize();
 				*/
 
-				float R    = objects[min_index].radius;
+				// Добавить проверку на сферу.!!!!!
+				float R    = ((Sphere*)objects[min_index])->radius;
 				float cosA = (-point).normalize()*normal;
 				float cosB = sqrt( 1 - (1/(n2*n2)) * (1-cosA*cosA) );
 				float sinA = sqrt(1 - cosA*cosA);
@@ -155,13 +157,13 @@ Vec3f cast_ray( const Vec3f& orig,
 				return tmp * fin_intensity;
 			}
 		}
-		return objects[min_index].material.color * fin_intensity;
+		return objects[min_index]->material.color * fin_intensity;
 	}
 	return background;
 }
 
 // Рисуем композицию - если луч пересекает объект, то ставим соотв. цвету объекта пиксель с учетом падения света.
-void render( const std::vector <Object>& objects, const std::vector <Light>& lights ){
+void render( const std::vector <Object*>& objects, const std::vector <Light>& lights ){
 
 	const int width    = 1024*1;
 	const int height   = 768*1;

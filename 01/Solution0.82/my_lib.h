@@ -34,15 +34,15 @@ public:
 
 class Object{
 public:
-	Vec3f normal;
-	float bias;
-	float call_size;
+//	Vec3f normal;
+//	float bias;
+//	float call_size;
 
-	Vec3f center;
-	float radius;
+//	Vec3f center;
+//	float radius;
 
 	Material material;
-	float ray_intersect( const Vec3f& orig, const Vec3f& dir ) const;
+	virtual float ray_intersect( const Vec3f& orig, const Vec3f& dir ) const = 0;
 };
 
 class Chessdesk: public Object{
@@ -80,6 +80,6 @@ Vec3f cast_ray( const Vec3f& orig, const Vec3f& dir, const std::vector <Sphere>&
 
 
 //Vec3f cast_ray( const Vec3f&, const Vec3f&, std::vector <Sphere> );			       // Почему работает?!?
-void render( const std::vector<Sphere>&, const std::vector<Light>& );
+void render( const std::vector<Object*>&, const std::vector<Light>& );
 
 #endif

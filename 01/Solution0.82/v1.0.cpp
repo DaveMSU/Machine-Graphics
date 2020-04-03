@@ -7,7 +7,7 @@ using namespace std;
 
 int main() {
 
-	vector <Object> objects;
+	vector <Object*> objects;
 	vector <Light> lights;
 
 	float dx;
@@ -17,16 +17,18 @@ int main() {
 
 		dx = sin(phi);
 		dz = cos(phi);
-		objects.push_back( Sphere( Vec3f(3.5,-1,9), 4, 
-				   	Material( Vec3f(0.9,0.1,0.1), 0.01, 0.4, 0.5, true, -1 ) ) ); // Стеклянный.
-		objects.push_back( Sphere( Vec3f(-5.5,0,4), 1, 
+		objects.push_back( new Sphere( Vec3f(3.5,-1,9), 4, 
+				   	new Material( Vec3f(0.9,0.1,0.1), 0.01, 0.4, 0.5, true, -1 ) ) ); // Стеклянный.
+		objects.push_back( new Sphere( Vec3f(-5.5,0,4), 1, 
 					Material( Vec3f(0.2,0.7,0.2), 0.15, 0.6, 0.2, false, -1 ) ) ); // Зелёный.
-		objects.push_back( Sphere( Vec3f(-2,1,6.5), 1.5, 
+		objects.push_back( new Sphere( Vec3f(-2,1,6.5), 1.5, 
 					Material( Vec3f(0.7,0.1,0.1), 0.05, 0.5, 0.1, false, -1 ) ) ); // Красный.
-		objects.push_back( Sphere( Vec3f(5,-2,3.5), 1.5, 
+		objects.push_back( new Sphere( Vec3f(5,-2,3.5), 1.5, 
         			   	Material( Vec3f(0.2,0.5,0.8), 0.2, 0.7, 0.3, false, -1 ) ) ); // Голубой.
-		objects.push_back( Sphere( Vec3f(-2.5,-2,4), 2, 
+		objects.push_back( new Sphere( Vec3f(-2.5,-2,4), 2, 
 				   	Material( Vec3f(0.3,0.6,0.7), 0.05, 0.5, 0.4, true, 100.333 ) ) ); // Стеклянный.
+
+		// std::cout << objects[0]->material.color[0] << std::endl;
 
 
 
