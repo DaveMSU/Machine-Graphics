@@ -7,16 +7,13 @@
 #include "my_lib.h"   // Основная библ-ка, в кот-ой нах-ся описания и справки всех функций.
 
 
-// Отражаем вектор vec относительно нормали.
-//
-Vec3f reflect( const Vec3f& vec, const Vec3f& normal ){ 
+Vec3f reflect( const Vec3f& vec, const Vec3f& normal ){ // Отражаем вектор vec относительно нормали normal.
 	
 	return normal * 2 * std::max(0.f, ((-vec)*normal)) + vec;
 }
 
 
 // Для нахождения OY, по OX и normal в Chessdesk.get_material().
-//
 Vec3f vector_product( const Vec3f& v1, const Vec3f& v2 ){ 
 
     float x = v1[1]*v2[2] - v1[2]*v2[1];
@@ -28,7 +25,6 @@ Vec3f vector_product( const Vec3f& v1, const Vec3f& v2 ){
 
 
 // Сделать константным!!!!!!!!!!!!!!!!!
-//
 std::pair<size_t, float> scene_intersect( const Vec3f& orig,
 	           	                  const Vec3f& dir,
                                           const std::vector <Object*>& objects ){ 
@@ -61,20 +57,19 @@ std::pair<size_t, float> scene_intersect( const Vec3f& orig,
 
 
 Vec3f cast_ray( const Vec3f& orig, 
-		const Vec3f& dir, 		      // Соглашение: вектор должен приходить нормализованным.
-		const std::vector <Object*>& objects, // spheres/chessdesk 
-		const std::vector <Light>& lights,
-	     	size_t depth ){
+                const Vec3f& dir,                     // Соглашение: вектор должен приходить нормализованным.
+                const std::vector <Object*>& objects, // spheres/chessdesk 
+                const std::vector <Light>& lights,
+                size_t depth ){
 
-	if( fabs(dir.length() - 1.f) > 1E-5 ){ // Соглашение: dir пришел не нормированным - бросаем исключение.
+        if( fabs(dir.length() - 1.f) > 1E-5 ){ // Соглашение: dir пришел не нормированным - бросаем исключение.
 
-		std::cout << dir.length() << std::endl;
-		std::string exc = "\n*****\nFunction: cast_ray()\n";
-		exc += "dir пришел не нормализованным.\ncurrent depth: ";
-	        exc += std::to_string(depth) + "\n*****";
-		throw std::logic_error(exc);
-	}
-
+                std::string exc = "\n*****\nFunction: cast_ray()\n";
+                exc += "dir пришел не нормализованным.\ncurrent depth: ";
+                exc += std::to_string(depth) + "\n*****";
+                throw std::logic_error(exc);
+        }
+ 
 	static std::pair<size_t, float> index_dist;
 	static size_t min_index;
 	static float min_dist;
@@ -84,6 +79,8 @@ Vec3f cast_ray( const Vec3f& orig,
 	min_dist  = index_dist.second; 
 
 	if( min_index != -1 ){
+
+		// Сделать все переменные static.
 
 		static Vec3f point;         // Радиус вектор этой точки.
 		static Vec3f normal;	    // Нормаль к этой точке.
@@ -100,12 +97,14 @@ Vec3f cast_ray( const Vec3f& orig,
 		shadow_coef = 0;	       
 	        fin_intensity = objects[min_index]->get_material(point).backg_coef;
 
-		point = orig + dir*min_dist;
+		// Проверить dir, при зеркальной доске.
+		point = orig + dir.normalize()*min_dist; // Нормализуем, т.к. по дефолту не нор-о в рекурсии.
+		normal = objects[min_index]->get_normal(point); 
+
 		Material this_material = objects[min_index]->get_material(point);
 		for( size_t i = 0; i < lights.size(); ++i ){
 
 			// Диффузный цвет:
-			//
 			light_dir = lights[i].position - point;
 			cos = (normal * light_dir) / light_dir.length();
 			distance = 4*pi * (light_dir * light_dir);
@@ -113,13 +112,11 @@ Vec3f cast_ray( const Vec3f& orig,
    		        diff_coef = std::max(0.f, diff_coef);
 
 			// Бликовый цвет:
-			//
 			spec_dir = reflect(-light_dir, normal);
 			spec_coef = (-point).normalize() * spec_dir.normalize();
 			spec_coef = pow(std::max(0.f, spec_coef), 100);
 
 			// Тени:
-			//
 			Vec3f cur_point;
 			for( size_t indx = 0; indx < objects.size(); ++indx ){
 
@@ -139,13 +136,13 @@ Vec3f cast_ray( const Vec3f& orig,
 		this_material.color *= fin_intensity;
 
 		// Зеркало:
-		//
 		static float n2;
 	        n2 = objects[min_index]->get_material(point).refr_coef;
-		if( objects[min_index]->get_material(point).mirror == true ){
-			
-			if( n2 > 0 ){
+		if( objects[min_index]->get_material(point).mirror == true ){ // Добавить проверку на сферу!!!!!!
+                    
+			if( n2 > 0 && 0 > 1 ){
 
+				// Добавить проверку на сферу.!!!!!
 				float R    = ((Sphere*)objects[min_index])->get_radius();
 				float cosA = (-point).normalize()*normal;
 				float cosB = sqrt( 1 - (1/(n2*n2)) * (1-cosA*cosA) );
@@ -168,23 +165,24 @@ Vec3f cast_ray( const Vec3f& orig,
 							      lights,	 
 							      depth-1 );	
 					if( tmp == background )
-						tmp *= 1.05;
+						tmp *= 1.05;	
 					return tmp * fin_intensity;
 				}
 			}
 			else
 			if( depth > 0 ){
-				
+				normal = normal.normalize();
 				Vec3f tmp = cast_ray( point,
-						      reflect(dir, normal).normalize(),
+						      // Разобраться почему reflect не работает!!!!!
+						      reflect(dir, normal),
+//				      normal*2*std::max(0.f,((-point)*normal)) + point,
 						      objects, 
 						      lights,	 
-						      depth-1 );
+						      depth-1 );	
 				if( tmp == background )
-					tmp *= 1.05;
+					tmp *= 1.05;	
 				return tmp * fin_intensity;
 			}
-	//		return background;
 		}
 		return objects[min_index]->get_material(point).color * fin_intensity;
 	}
@@ -193,7 +191,6 @@ Vec3f cast_ray( const Vec3f& orig,
 
 
 // Рисуем композицию - если луч пересекает объект, то ставим соотв. цвету объекта пиксель с учетом падения света.
-//
 void render( const std::vector <Object*>& objects, const std::vector <Light>& lights ){
 
 	const int width    = 1024*1;
@@ -241,15 +238,14 @@ Material::Material( const Vec3f& color,
 Sphere::Sphere( const Vec3f& c, const float& r, const Material& m ): center(c), radius(r), material(m) {}
 
 // >0 - растояние до пересечения, -1 - не пересекает. (подробней см. my_lib.h)
-//
 float Sphere::ray_intersect( const Vec3f& orig, const Vec3f& dir ) const {
 
-	if( fabs(dir.length() - 1.f) > 1E-5 ){ // Соглашение: dir пришел не нормированным - бросаем исключение.
+        if( fabs(dir.length() - 1.f) > 1E-5 ){ // Соглашение: dir пришел не нормированным - бросаем исключение.
 
-		std::string exc = "\n*****\nFunction: Sphere::ray_intersect()\n";
-		exc += "dir пришел не нормализованным.\n*****";
-		throw std::logic_error(exc);
-	}
+                std::string exc = "\n*****\nFunction: Sphere::ray_intersect()\n";
+                exc += "dir пришел не нормализованным.\n*****";
+                throw std::logic_error(exc);
+        }
 
         static Vec3f L;
 	static float cosFI;
@@ -260,18 +256,18 @@ float Sphere::ray_intersect( const Vec3f& orig, const Vec3f& dir ) const {
 	static float d;
 	
 	L = center - orig;
-        cosFI = dir*L.normalize(); // cos(dir,радиус-вектор ц/c).
+        cosFI = L.normalize()*dir.normalize();// cos(dir,радиус-вектор ц/c).
 	r2 = radius*radius;
         d2 = L*L*(1 - cosFI*cosFI);
         
 	if( d2 > r2 )
-                return -1;         // Расстояние до ПРЯМОЙ больше радуса.
+                return -1; // Расстояние до ПРЯМОЙ больше радуса.
         if( cosFI < 0 )
-                return -1;         // Р/в центра сферы и вектор направления луча направлены в разные стороны.
+                return -1; // 'Смотрят' в разные полупространства (стороны).
         
-	dist_to_center2 = L*L;     // Квадрат расстояния от камеры до центра сферы.
+	dist_to_center2 = L*L; // Квадрат расстояния от источника света до центра сферы.
 	dist_d = sqrt(dist_to_center2 + d2); // 'почти' Расстояние до сферы.
-	d = sqrt(r2 - d2);         // То самое 'почти'.
+	d = sqrt(r2 - d2); // То самое 'почти'.
 
 	return dist_d - d;
 }
@@ -314,7 +310,6 @@ Chessdesk::Chessdesk( const Vec3f& n,
         	O[i] = -bias / normal[i];
 
 		// По 3dtmp вычисляем 2dtmp - вектор, но в координатах плоскости.
-		//
 		c1 = Vec3f(0,0,0);
 		c2 = Vec3f(0,0,0);
 
@@ -326,16 +321,15 @@ Chessdesk::Chessdesk( const Vec3f& n,
 		c2 = vector_product(c1,normal); // Векторное произведение.	
 }
 
-
 float Chessdesk::ray_intersect( const Vec3f& orig, const Vec3f& dir ) const {
 
-	if( fabs(dir.length() - 1.f) > 1E-5 ){ // Соглашение: dir пришел не нормированным - бросаем исключение.
+        if( fabs(dir.length() - 1.f) > 1E-5 ){ // Соглашение: dir пришел не нормированным - бросаем исключение.
 
-		std::string exc = "\n*****\nFunction: Chessdesk::ray_intersect()\n";
-		exc += "dir пришел не нормализованным.\n*****";
-		throw std::logic_error(exc);
-	}
-
+                std::string exc = "\n*****\nFunction: Chessdesk::ray_intersect()\n";
+                exc += "dir пришел не нормализованным.\n*****";
+                throw std::logic_error(exc);
+        }
+ 
 	if( (orig*normal-bias) * (dir*normal) < 0 )
 			return (normal*orig+bias)/(dir*normal);
 	return -1;		

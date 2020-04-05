@@ -46,7 +46,7 @@ int main() {
 					Material( Vec3f(0.1, 0.1, 0.3), 0.2, 0.5, 0.4, false, -1 ),
 				        Material( Vec3f(0.6, 0.8, 0.8), 0.2, 0.7, 2, false, -1 )) ); // Доска.
 
-		objects.push_back( new Sphere( Vec3f(3.5,-1,9), 5.5, 
+		objects.push_back( new Sphere( Vec3f(3.5,-1,9), 4, 
 				   	Material( Vec3f(0.9,0.1,0.1), 0.01, 0.4, 0.5, true, -1 ) ) ); // Стеклянный.
 		objects.push_back( new Sphere( Vec3f(-6.5,0,4), 1, 
 					Material( Vec3f(0.2,0.7,0.2), 0.15, 0.6, 0.2, false, -1 ) ) ); // Зелёный.

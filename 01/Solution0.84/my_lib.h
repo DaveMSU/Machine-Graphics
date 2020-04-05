@@ -3,7 +3,7 @@
 
 #define pi 3.141592654
 #define background Vec3f( 0.2, 0.7, 0.8 )
-#define MAX_DEPTH 20
+#define MAX_DEPTH 5
 #include "geometry.h"
 
 
